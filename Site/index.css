@@ -1,0 +1,55 @@
+/* 2016-style theme: big flat gradients, bold headings, subtle shadows */
+:root{
+	--page-bg:#ffffff; /* FFFFF MOST THINGS */
+	--text-strong:#222222; /* 222222 TEXT */
+	--accent:#A3F6FF; /* A3F6FF SOME BUTTONS */
+	--card:#ffffff;
+	--muted-rgba:rgba(34,34,34,0.6);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+	margin:0;
+	font-family:'Lato',system-ui,-apple-system,Segoe UI,Arial;
+	background:var(--page-bg);
+	color:var(--text-strong);
+	-webkit-font-smoothing:antialiased;
+	-moz-osx-font-smoothing:grayscale;
+}
+
+.navbar{background:#f2f2f2 !important;border-bottom:1px solid rgba(34,34,34,0.06);}
+.navbar-brand{font-family:'Lato',sans-serif;font-weight:700;color:var(--text-strong) !important;letter-spacing:1px}
+.navbar .nav-link{color:var(--text-strong) !important}
+
+.container-fluid{max-width:1100px;margin:0 auto;padding:1rem}
+
+h1{font-family:'Lato',sans-serif;font-weight:700;color:var(--text-strong);font-size:3rem;margin:2rem 0;text-transform:uppercase;letter-spacing:1px}
+
+/* Buttons get a flat, bold look common in mid-2010s themes */
+.btn{border-radius:3px}
+.btn-outline-success{color:var(--text-strong);border-color:rgba(34,34,34,0.12);background:transparent}
+.btn-outline-success:hover{background:var(--accent);color:var(--text-strong);border-color:var(--accent)}
+
+/* Forms */
+.navbar .form-control{background:rgba(0,0,0,0.03);border:1px solid rgba(34,34,34,0.06);color:var(--text-strong)}
+.navbar .form-control::placeholder{color:rgba(34,34,34,0.5)}
+
+/* Dropdowns and menus use flattened cards */
+.dropdown-menu{border-radius:2px;border:1px solid rgba(34,34,34,0.06);box-shadow:0 6px 20px rgba(0,0,0,0.04);background:var(--card)}
+.dropdown-item{color:var(--text-strong)}
+
+/* Hero tweak for classic mid-2010s vibe */
+body > nav + h1{padding-left:1rem}
+
+/* Simple responsive tweak */
+@media (max-width:767px){
+	h1{font-size:2rem;text-align:center}
+	.container-fluid{padding:0.5rem}
+}
+
+/* Small card utility for future converters/posts */
+.card-2016{background:var(--card);border-radius:3px;padding:1rem;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+
+/* Accent link style */
+a{color:var(--accent)}

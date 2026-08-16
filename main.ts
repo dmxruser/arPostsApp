@@ -1,16 +1,16 @@
 import * as http from 'http';
 import { type IncomingMessage, type ServerResponse } from 'http';
 import { URL } from 'url';
-import { createAccount } from './App/AccountFlow/Signup';
-import { loginAccount } from './App/AccountFlow/Login';
-import { logoutAccount } from './App/AccountFlow/Logout';
-import { checkToken } from './App/AccountFlow/JWT/JWTCheck';
-import { loadPosts } from './App/PostFlow/LoadPosts';
-import { makePost } from './App/PostFlow/User/MakePost';
-import { deletePost } from './App/PostFlow/User/DeletePost';
-import { likePost } from './App/PostFlow/User/LikePost';
-import { deletePosts } from './App/Cron/DeletePosts';
-import { idToName } from './App/Converters/idToName';
+import { createAccount } from './Server/AccountFlow/Signup';
+import { loginAccount } from './Server/AccountFlow/Login';
+import { logoutAccount } from './Server/AccountFlow/Logout';
+import { checkToken } from './Server/AccountFlow/JWT/JWTCheck';
+import { loadPosts } from './Server/PostFlow/LoadPosts';
+import { makePost } from './Server/PostFlow/User/MakePost';
+import { deletePost } from './Server/PostFlow/User/DeletePost';
+import { likePost } from './Server/PostFlow/User/LikePost';
+import { deletePosts } from './Server/Cron/DeletePosts';
+import { idToName } from './Server/Converters/idToName';
 import { closeDb } from './db';
 
 const PORT = Number(process.env.PORT ?? '3000');
@@ -183,6 +183,11 @@ function startCleanup(): void {
       // ignore cleanup errors
     }
   }, CLEANUP_INTERVAL_MS);
+}
+
+// Converters / helper wrappers
+export async function getAuthorName(userId: string): Promise<string | null> {
+  return idToName(userId);
 }
 
 const server = http.createServer((req, res) => {
