@@ -75,7 +75,7 @@ async function withAuth(req: IncomingMessage, res: ServerResponse): Promise<Reco
   return payload;
 }
 
-async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+export async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
     const pathname = url.pathname;
@@ -190,24 +190,6 @@ export async function getAuthorName(userId: string): Promise<string | null> {
   return idToName(userId);
 }
 
-const server = http.createServer((req, res) => {
-  void handleRequest(req, res);
-});
-
-server.listen(PORT, () => {
-  startCleanup();
-});
-
-process.on('SIGINT', async () => {
-  server.close(async () => {
-    await closeDb();
-    process.exit(0);
-  });
-});
-
-process.on('SIGTERM', async () => {
-  server.close(async () => {
-    await closeDb();
-    process.exit(0);
-  });
-});
+// In serverless environments (Vercel) we export `handleRequest` and
+// provide lightweight API wrappers under `/api/` that call this function.
+// Long-running timers or process signal handlers are not used here.

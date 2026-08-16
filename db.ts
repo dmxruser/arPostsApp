@@ -1,13 +1,27 @@
 import { Pool, type QueryResult } from 'pg';
 
-// Initialize the pool with your database configurations. Use environment variables in production.
-const pool = new Pool({
-  user: process.env.DB_USER ?? 'dmxruser',
-  host: process.env.DB_HOST ?? 'localhost',
-  database: process.env.DB_NAME ?? 'arposts',
-  password: process.env.DB_PASSWORD ?? 'password',
-  port: Number(process.env.DB_PORT ?? '5432'),
-});
+// Serverless-friendly cached pool: reuse across invocations when possible.
+declare global {
+  // eslint-disable-next-line no-var
+  var __pgPool: Pool | undefined;
+}
+
+function makePool(): Pool {
+  // Prefer DATABASE_URL when available, otherwise fall back to individual vars.
+  if (process.env.DATABASE_URL) {
+    return new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined });
+  }
+
+  return new Pool({
+    user: process.env.DB_USER ?? 'dmxruser',
+    host: process.env.DB_HOST ?? 'localhost',
+    database: process.env.DB_NAME ?? 'arposts',
+    password: process.env.DB_PASSWORD ?? 'password',
+    port: Number(process.env.DB_PORT ?? '5432'),
+  });
+}
+
+const pool: Pool = global.__pgPool ??= makePool();
 
 function sanitizeValue(value: unknown): unknown {
   // Trim string parameters before sending to the database. Callers should
