@@ -8,16 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/Site/",
-      "status": 302
-    },
-    { "src": "/health", "dest": "/api" },
-    { "src": "/signup", "dest": "/api" },
-    { "src": "/login", "dest": "/api" },
-    { "src": "/logout", "dest": "/api" },
-    { "src": "/posts", "dest": "/api" },
-    { "src": "/posts/(.*)", "dest": "/api" },
-    { "src": "/api/(.*)", "dest": "/api" }
+      "src": "/(.*)",
+      "dest": "/api"
+    }
   ]
 }
