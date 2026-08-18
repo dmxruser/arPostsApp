@@ -5,14 +5,20 @@
       "schedule": "0 0 * * *"
     }
   ],
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
-      "destination": "/Site/index.html"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/Site/:path*"
+      "destination": "/Site/",
+      "statusCode": 302
     }
+  ],
+  "rewrites": [
+    { "source": "/health", "destination": "/api" },
+    { "source": "/signup", "destination": "/api" },
+    { "source": "/login", "destination": "/api" },
+    { "source": "/logout", "destination": "/api" },
+    { "source": "/posts", "destination": "/api" },
+    { "source": "/posts/:id", "destination": "/api" },
+    { "source": "/posts/:id/:action", "destination": "/api" }
   ]
 }
