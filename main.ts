@@ -85,6 +85,12 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
       return jsonResponse(res, 200, { status: 'ok' });
     }
 
+    if (pathname === '/' && method === 'GET') {
+      res.writeHead(302, { Location: '/Site/' });
+      res.end();
+      return;
+    }
+
     if (pathname === '/signup' && method === 'POST') {
       const body = await parseJsonBody(req);
       const username = String(body.username ?? '');
