@@ -13,12 +13,13 @@
     }
   ],
   "rewrites": [
-    { "source": "/health", "destination": "/api/health" },
-    { "source": "/signup", "destination": "/api/signup" },
-    { "source": "/login", "destination": "/api/login" },
-    { "source": "/logout", "destination": "/api/logout" },
-    { "source": "/posts", "destination": "/api/posts" },
-    { "source": "/posts/:id", "destination": "/api/posts/:id" },
-    { "source": "/posts/:id/:action", "destination": "/api/posts/:id/:action" }
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/health", "destination": "/api" },
+    { "source": "/signup", "destination": "/api" },
+    { "source": "/login", "destination": "/api" },
+    { "source": "/logout", "destination": "/api" },
+    { "source": "/posts", "destination": "/api" },
+    { "source": "/posts/:id", "destination": "/api" },
+    { "source": "/posts/:id/:action", "destination": "/api" }
   ]
 }

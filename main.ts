@@ -78,10 +78,11 @@ async function withAuth(req: IncomingMessage, res: ServerResponse): Promise<Reco
 export async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
-    const normalizedPath = url.pathname.startsWith('/api')
-      ? url.pathname.slice('/api'.length) || '/'
-      : url.pathname;
-    const pathname = normalizedPath;
+    const pathnameRaw = url.pathname;
+    const normalizedPath = pathnameRaw.startsWith('/api')
+      ? pathnameRaw.slice('/api'.length) || '/'
+      : pathnameRaw;
+    const pathname = normalizedPath || '/';
     const method = req.method ?? 'GET';
 
     if (pathname === '/health' && method === 'GET') {
