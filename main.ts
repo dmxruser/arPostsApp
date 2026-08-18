@@ -37,6 +37,19 @@ function unauthorized(res: ServerResponse): void {
   jsonResponse(res, 401, { error: 'Unauthorized' });
 }
 
+function serviceUnavailable(res: ServerResponse, message: string): void {
+  jsonResponse(res, 503, { error: 'Service unavailable', message });
+}
+
+function ensureDbConfigured(): void {
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+  const hasLegacyDbConfig = Boolean(process.env.DB_HOST || process.env.DB_NAME || process.env.DB_USER || process.env.DB_PASSWORD);
+
+  if (!hasDatabaseUrl && !hasLegacyDbConfig) {
+    throw new Error('Missing DATABASE_URL or DB_* environment variables in Vercel. Set them in Project Settings > Environment Variables.');
+  }
+}
+
 function parseJsonBody(req: IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
     const chunks: Uint8Array[] = [];
@@ -106,8 +119,14 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         return badRequest(res, 'username and password are required');
       }
 
-      await createAccount(username, password);
-      return jsonResponse(res, 201, { message: 'Account created' });
+      try {
+        ensureDbConfigured();
+        await createAccount(username, password);
+        return jsonResponse(res, 201, { message: 'Account created' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Database configuration error';
+        return serviceUnavailable(res, message);
+      }
     }
 
     if (pathname === '/login' && method === 'POST') {
@@ -119,8 +138,14 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         return badRequest(res, 'username and password are required');
       }
 
-      const token = await loginAccount(username, password);
-      return jsonResponse(res, 200, { token });
+      try {
+        ensureDbConfigured();
+        const token = await loginAccount(username, password);
+        return jsonResponse(res, 200, { token });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Database configuration error';
+        return serviceUnavailable(res, message);
+      }
     }
 
     if (pathname === '/logout' && method === 'POST') {
@@ -138,8 +163,14 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         return badRequest(res, 'lat, lng, and radius query parameters are required');
       }
 
-      const posts = await loadPosts(lat, lng, radius);
-      return jsonResponse(res, 200, { posts });
+      try {
+        ensureDbConfigured();
+        const posts = await loadPosts(lat, lng, radius);
+        return jsonResponse(res, 200, { posts });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Database configuration error';
+        return serviceUnavailable(res, message);
+      }
     }
 
     if (pathname === '/posts' && method === 'POST') {
