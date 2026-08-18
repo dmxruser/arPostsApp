@@ -1,25 +1,23 @@
 {
+  "version": 2,
   "crons": [
     {
       "path": "/api/cron",
       "schedule": "0 0 * * *"
     }
   ],
-  "redirects": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/Site/",
-      "statusCode": 302
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/health", "destination": "/api" },
-    { "source": "/signup", "destination": "/api" },
-    { "source": "/login", "destination": "/api" },
-    { "source": "/logout", "destination": "/api" },
-    { "source": "/posts", "destination": "/api" },
-    { "source": "/posts/:id", "destination": "/api" },
-    { "source": "/posts/:id/:action", "destination": "/api" }
+      "src": "/",
+      "dest": "/Site/",
+      "status": 302
+    },
+    { "src": "/health", "dest": "/api" },
+    { "src": "/signup", "dest": "/api" },
+    { "src": "/login", "dest": "/api" },
+    { "src": "/logout", "dest": "/api" },
+    { "src": "/posts", "dest": "/api" },
+    { "src": "/posts/(.*)", "dest": "/api" },
+    { "src": "/api/(.*)", "dest": "/api" }
   ]
 }
