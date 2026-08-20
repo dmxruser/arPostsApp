@@ -1,6 +1,7 @@
 import * as http from 'http';
 import { type IncomingMessage, type ServerResponse } from 'http';
 import { URL } from 'url';
+import dns from 'dns/promises';
 import { createAccount } from './Server/AccountFlow/Signup';
 import { loginAccount } from './Server/AccountFlow/Login';
 import { logoutAccount } from './Server/AccountFlow/Logout';
@@ -107,6 +108,52 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
 
     if (pathname === '/health' && method === 'GET') {
       return jsonResponse(res, 200, { status: 'ok' });
+    }
+
+    if (pathname === '/debug/dns' && method === 'GET') {
+      try {
+        const hosts: string[] = [];
+        if (process.env.DATABASE_URL) {
+          try {
+            hosts.push(new URL(process.env.DATABASE_URL).hostname);
+          } catch {
+            // ignore
+          }
+        }
+        if (process.env.DB_SERVERNAME) hosts.push(process.env.DB_SERVERNAME);
+        if (process.env.DB_HOST) hosts.push(process.env.DB_HOST);
+        if (process.env.SUPABASE_URL) {
+          try {
+            const u = new URL(process.env.SUPABASE_URL);
+            hosts.push(u.hostname);
+          } catch {
+            hosts.push(process.env.SUPABASE_URL);
+          }
+        }
+
+        const unique = Array.from(new Set(hosts.filter(Boolean)));
+        const results: Record<string, unknown> = {};
+        for (const h of unique) {
+          results[h] = { ipv4: null, ipv6: null };
+          try {
+            // resolve4/6 may throw if no records
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (results as any)[h].ipv4 = await dns.resolve4(h).catch((e) => ({ error: String(e) }));
+          } catch (e) {
+            (results as any)[h].ipv4 = { error: String(e) };
+          }
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (results as any)[h].ipv6 = await dns.resolve6(h).catch((e) => ({ error: String(e) }));
+          } catch (e) {
+            (results as any)[h].ipv6 = { error: String(e) };
+          }
+        }
+
+        return jsonResponse(res, 200, { hosts: unique, results });
+      } catch (err) {
+        return serviceUnavailable(res, err instanceof Error ? err.message : String(err));
+      }
     }
 
     if (pathname === '/' && method === 'GET') {
