@@ -28,6 +28,18 @@ This project uses Supabase Postgres for data and Vercel for hosting. Keep env na
 - `NODE_ENV` — set to `production`
 - `LOG_LEVEL` (optional) — `info` or `debug`
 
+## Using Supavisor (pooler) for serverless
+- For serverless (Vercel), prefer Supavisor transaction-mode pooler. Example `DATABASE_URL` (password contains `!` so it's percent-encoded):
+
+```text
+postgres://postgres:P0stgreSQL%21@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres
+```
+
+- Notes:
+  - Replace the `postgres` username and host with your actual values from the Supabase dashboard.
+  - The `!` in `P0stgreSQL!` must be encoded as `%21` in the URL.
+  - Ensure `DB_SSL=true` is set in Vercel for TLS.
+
 Optional Supabase client keys (only if the app uses the Supabase client directly):
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
