@@ -9,7 +9,23 @@ declare global {
 function makePool(): Pool {
   // Prefer DATABASE_URL when available, otherwise fall back to individual vars.
   if (process.env.DATABASE_URL) {
-    return new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined });
+    // Log the host we will attempt to connect to (helps debug ENOTFOUND from Vercel).
+    try {
+      const parsed = new URL(process.env.DATABASE_URL);
+      // eslint-disable-next-line no-console
+      console.info('db.makePool using DATABASE_URL host', parsed.hostname, 'port', parsed.port || '(default)', 'ssl', process.env.DB_SSL === 'true');
+    } catch {
+      // ignore parse errors — we'll let pg report them during connection attempts
+    }
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined });
+    // surface unexpected client errors to logs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pool as any).on?.('error', (err: Error) => {
+      // eslint-disable-next-line no-console
+      console.error('db.pool error', { error: err instanceof Error ? err.stack || err.message : err });
+    });
+    return pool;
   }
 
   return new Pool({
@@ -156,7 +172,11 @@ export const db = {
     }
 
     const safeParams = params?.map(sanitizeValue);
-    return pool.query(text, safeParams);
+    return pool.query(text, safeParams).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error('db.query error', { text: text?.slice?.(0, 200), params: safeParams, error: err instanceof Error ? err.stack || err.message : err });
+      throw err;
+    });
   },
 };
 

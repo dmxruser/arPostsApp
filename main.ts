@@ -38,6 +38,8 @@ function unauthorized(res: ServerResponse): void {
 }
 
 function serviceUnavailable(res: ServerResponse, message: string): void {
+  // eslint-disable-next-line no-console
+  console.error('serviceUnavailable', { message });
   jsonResponse(res, 503, { error: 'Service unavailable', message });
 }
 
@@ -90,6 +92,9 @@ async function withAuth(req: IncomingMessage, res: ServerResponse): Promise<Reco
 
 export async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
+    // request-level tracing
+    // eslint-disable-next-line no-console
+    console.info('handleRequest start', { method: req.method, url: req.url });
     const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
     const pathnameRaw = url.pathname || '/';
     const normalizedPath = pathnameRaw === '/api' || pathnameRaw === '/api/'
@@ -213,7 +218,9 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
     }
 
     notFound(res);
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('handleRequest error', { error: err instanceof Error ? err.stack || err.message : err, url: req?.url });
     jsonResponse(res, 500, { error: 'Internal server error' });
   }
 }
