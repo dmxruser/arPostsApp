@@ -115,12 +115,17 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         const hosts: string[] = [];
         if (process.env.DATABASE_URL) {
           try {
-            hosts.push(new URL(process.env.DATABASE_URL).hostname);
+            const rawDb = process.env.DATABASE_URL as string;
+            const databaseUrl = rawDb.includes('=') && !rawDb.startsWith('postgres://') ? rawDb.slice(rawDb.indexOf('=') + 1) : rawDb;
+            hosts.push(new URL(databaseUrl).hostname);
           } catch {
             // ignore
           }
         }
-        if (process.env.DB_SERVERNAME) hosts.push(process.env.DB_SERVERNAME);
+        if (process.env.DB_SERVERNAME) {
+          const raw = process.env.DB_SERVERNAME as string;
+          hosts.push(raw.includes('=') ? raw.slice(raw.indexOf('=') + 1) : raw);
+        }
         if (process.env.DB_HOST) hosts.push(process.env.DB_HOST);
         if (process.env.SUPABASE_URL) {
           try {

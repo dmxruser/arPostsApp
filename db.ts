@@ -9,9 +9,15 @@ declare global {
 function makePool(): Pool {
   // Prefer DATABASE_URL when available, otherwise fall back to individual vars.
   if (process.env.DATABASE_URL) {
+    // Sanitize values in case the env var was set in the form "KEY=value" by mistake.
+    const rawDatabaseUrl = process.env.DATABASE_URL as string;
+    const databaseUrl = rawDatabaseUrl.includes('=') && !rawDatabaseUrl.startsWith('postgres://')
+      ? rawDatabaseUrl.slice(rawDatabaseUrl.indexOf('=') + 1)
+      : rawDatabaseUrl;
+
     // Log the host we will attempt to connect to (helps debug ENOTFOUND from Vercel).
     try {
-      const parsed = new URL(process.env.DATABASE_URL);
+      const parsed = new URL(databaseUrl);
       // eslint-disable-next-line no-console
       console.info('db.makePool using DATABASE_URL host', parsed.hostname, 'port', parsed.port || '(default)', 'ssl', process.env.DB_SSL === 'true');
     } catch {
@@ -21,14 +27,17 @@ function makePool(): Pool {
     // Build ssl config: allow specifying SNI via DB_SERVERNAME for Supavisor/pooler
     const useSsl = process.env.DB_SSL === 'true';
     const sslConfig: any = useSsl ? { rejectUnauthorized: true } : undefined;
+    // sanitize DB_SERVERNAME if present (strip accidental KEY= prefix)
     if (useSsl && process.env.DB_SERVERNAME) {
-      sslConfig.servername = process.env.DB_SERVERNAME;
+      const raw = process.env.DB_SERVERNAME as string;
+      const servername = raw.includes('=') ? raw.slice(raw.indexOf('=') + 1) : raw;
+      sslConfig.servername = servername;
     }
 
     // eslint-disable-next-line no-console
-    console.info('db.makePool using DATABASE_URL host', (() => { try { return new URL(process.env.DATABASE_URL as string).hostname; } catch { return '(unknown)'; } })(), 'ssl', useSsl, 'ssl.servername', sslConfig?.servername ?? '(none)');
+    console.info('db.makePool using DATABASE_URL host', (() => { try { return new URL(databaseUrl as string).hostname; } catch { return '(unknown)'; } })(), 'ssl', useSsl, 'ssl.servername', sslConfig?.servername ?? '(none)');
 
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: sslConfig });
+    const pool = new Pool({ connectionString: databaseUrl, ssl: sslConfig });
     // surface unexpected client errors to logs
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (pool as any).on?.('error', (err: Error) => {
