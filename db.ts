@@ -18,7 +18,17 @@ function makePool(): Pool {
       // ignore parse errors — we'll let pg report them during connection attempts
     }
 
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined });
+    // Build ssl config: allow specifying SNI via DB_SERVERNAME for Supavisor/pooler
+    const useSsl = process.env.DB_SSL === 'true';
+    const sslConfig: any = useSsl ? { rejectUnauthorized: true } : undefined;
+    if (useSsl && process.env.DB_SERVERNAME) {
+      sslConfig.servername = process.env.DB_SERVERNAME;
+    }
+
+    // eslint-disable-next-line no-console
+    console.info('db.makePool using DATABASE_URL host', (() => { try { return new URL(process.env.DATABASE_URL as string).hostname; } catch { return '(unknown)'; } })(), 'ssl', useSsl, 'ssl.servername', sslConfig?.servername ?? '(none)');
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: sslConfig });
     // surface unexpected client errors to logs
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (pool as any).on?.('error', (err: Error) => {
@@ -28,12 +38,22 @@ function makePool(): Pool {
     return pool;
   }
 
+  const useSsl = process.env.DB_SSL === 'true';
+  const sslConfig: any = useSsl ? { rejectUnauthorized: true } : undefined;
+  if (useSsl && process.env.DB_SERVERNAME) {
+    sslConfig.servername = process.env.DB_SERVERNAME;
+  }
+
+  // eslint-disable-next-line no-console
+  console.info('db.makePool using individual vars host', process.env.DB_HOST ?? 'localhost', 'port', process.env.DB_PORT ?? '5432', 'ssl', useSsl, 'ssl.servername', sslConfig?.servername ?? '(none)');
+
   return new Pool({
     user: process.env.DB_USER ?? 'dmxruser',
     host: process.env.DB_HOST ?? 'localhost',
     database: process.env.DB_NAME ?? 'arposts',
     password: process.env.DB_PASSWORD ?? 'password',
     port: Number(process.env.DB_PORT ?? '5432'),
+    ssl: sslConfig,
   });
 }
 
