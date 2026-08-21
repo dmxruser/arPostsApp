@@ -30,6 +30,11 @@ function notFound(res: ServerResponse): void {
   jsonResponse(res, 404, { error: 'Not found' });
 }
 
+function methodNotAllowed(res: ServerResponse, allowedMethods: string[]): void {
+  res.setHeader('Allow', allowedMethods.join(', '));
+  jsonResponse(res, 405, { error: 'Method not allowed' });
+}
+
 function badRequest(res: ServerResponse, message: string): void {
   jsonResponse(res, 400, { error: message });
 }
@@ -106,8 +111,11 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
     const pathname = normalizedPath || '/';
     const method = req.method ?? 'GET';
 
-    if (pathname === '/health' && method === 'GET') {
-      return jsonResponse(res, 200, { status: 'ok' });
+    if (pathname === '/health') {
+      if (method === 'GET') {
+        return jsonResponse(res, 200, { status: 'ok' });
+      }
+      return methodNotAllowed(res, ['GET']);
     }
 
     if (pathname === '/debug/dns' && method === 'GET') {
@@ -167,7 +175,10 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
       return;
     }
 
-    if (pathname === '/signup' && method === 'POST') {
+    if (pathname === '/signup') {
+      if (method !== 'POST') {
+        return methodNotAllowed(res, ['POST']);
+      }
       const body = await parseJsonBody(req);
       const username = String(body.username ?? '');
       const password = String(body.password ?? '');
@@ -186,7 +197,10 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
       }
     }
 
-    if (pathname === '/login' && method === 'POST') {
+    if (pathname === '/login') {
+      if (method !== 'POST') {
+        return methodNotAllowed(res, ['POST']);
+      }
       const body = await parseJsonBody(req);
       const username = String(body.username ?? '');
       const password = String(body.password ?? '');
@@ -205,32 +219,39 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
       }
     }
 
-    if (pathname === '/logout' && method === 'POST') {
+    if (pathname === '/logout') {
+      if (method !== 'POST') {
+        return methodNotAllowed(res, ['POST']);
+      }
       const token = getBearerToken(req);
       await logoutAccount(token ?? undefined);
       return jsonResponse(res, 200, { message: 'Logged out' });
     }
 
-    if (pathname === '/posts' && method === 'GET') {
-      const lat = Number(url.searchParams.get('lat'));
-      const lng = Number(url.searchParams.get('lng'));
-      const radius = Number(url.searchParams.get('radius'));
+    if (pathname === '/posts') {
+      if (method === 'GET') {
+        const lat = Number(url.searchParams.get('lat'));
+        const lng = Number(url.searchParams.get('lng'));
+        const radius = Number(url.searchParams.get('radius'));
 
-      if (Number.isNaN(lat) || Number.isNaN(lng) || Number.isNaN(radius)) {
-        return badRequest(res, 'lat, lng, and radius query parameters are required');
+        if (Number.isNaN(lat) || Number.isNaN(lng) || Number.isNaN(radius)) {
+          return badRequest(res, 'lat, lng, and radius query parameters are required');
+        }
+
+        try {
+          ensureDbConfigured();
+          const posts = await loadPosts(lat, lng, radius);
+          return jsonResponse(res, 200, { posts });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Database configuration error';
+          return serviceUnavailable(res, message);
+        }
       }
 
-      try {
-        ensureDbConfigured();
-        const posts = await loadPosts(lat, lng, radius);
-        return jsonResponse(res, 200, { posts });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Database configuration error';
-        return serviceUnavailable(res, message);
+      if (method !== 'POST') {
+        return methodNotAllowed(res, ['GET', 'POST']);
       }
-    }
 
-    if (pathname === '/posts' && method === 'POST') {
       const body = await parseJsonBody(req);
       const auth = await withAuth(req, res);
       if (!auth) return;
@@ -266,6 +287,14 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         const userId = String((auth.userId ?? auth.username ?? '') as unknown);
         await deletePost(userId, postId);
         return jsonResponse(res, 200, { message: 'Post deleted' });
+      }
+
+      if (action === 'like') {
+        return methodNotAllowed(res, ['POST']);
+      }
+
+      if (!action) {
+        return methodNotAllowed(res, ['DELETE']);
       }
     }
 
