@@ -1,11 +1,7 @@
-const revokedTokens = new Set<string>();
+import { revokeSession } from './Sessions';
 
 export async function logoutAccount(token?: string): Promise<void> {
     if (token) {
-        revokedTokens.add(token.trim());
+        await revokeSession(token.trim());
     }
-}
-
-export function isTokenRevoked(token: string): boolean {
-    return revokedTokens.has(token.trim());
 }

@@ -1,14 +1,14 @@
 import { verifyToken } from './JWTGen';
-import { isTokenRevoked } from '../Logout';
+import { hasActiveSession } from '../Sessions';
 
 export async function checkToken(token: string): Promise<Record<string, unknown> | null> {
-    if (isTokenRevoked(token)) {
-        return null;
-    }
-
     try {
         const decoded = await verifyToken(token);
-        return typeof decoded === 'object' && decoded !== null ? decoded : null;
+        if (typeof decoded !== 'object' || decoded === null) {
+            return null;
+        }
+
+        return await hasActiveSession(token) ? decoded : null;
     } catch {
         return null;
     }
