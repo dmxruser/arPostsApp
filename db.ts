@@ -26,7 +26,9 @@ function makePool(): Pool {
 
     // Build ssl config: allow specifying SNI via DB_SERVERNAME for Supavisor/pooler
     const useSsl = process.env.DB_SSL === 'true';
-    const sslConfig: any = useSsl ? { rejectUnauthorized: true } : undefined;
+    // Allow connecting to pooler endpoints that may present non-public cert chains
+    // in serverless environments. This keeps TLS enabled but skips strict CA checks.
+    const sslConfig: any = useSsl ? { rejectUnauthorized: false } : undefined;
     // sanitize DB_SERVERNAME if present (strip accidental KEY= prefix)
     if (useSsl && process.env.DB_SERVERNAME) {
       const raw = process.env.DB_SERVERNAME as string;
@@ -48,7 +50,8 @@ function makePool(): Pool {
   }
 
   const useSsl = process.env.DB_SSL === 'true';
-  const sslConfig: any = useSsl ? { rejectUnauthorized: true } : undefined;
+  // See above: relax CA validation for pooler cert chains in serverless envs.
+  const sslConfig: any = useSsl ? { rejectUnauthorized: false } : undefined;
   if (useSsl && process.env.DB_SERVERNAME) {
     sslConfig.servername = process.env.DB_SERVERNAME;
   }

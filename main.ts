@@ -1,7 +1,7 @@
 import * as http from 'http';
 import { type IncomingMessage, type ServerResponse } from 'http';
 import { URL } from 'url';
-import dns from 'dns/promises';
+import * as dns from 'dns/promises';
 import { createAccount } from './Server/AccountFlow/Signup';
 import { loginAccount } from './Server/AccountFlow/Login';
 import { logoutAccount } from './Server/AccountFlow/Logout';
@@ -143,13 +143,13 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
           try {
             // resolve4/6 may throw if no records
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (results as any)[h].ipv4 = await dns.resolve4(h).catch((e) => ({ error: String(e) }));
+            (results as any)[h].ipv4 = await dns.resolve4(h).catch((e: unknown) => ({ error: String(e) }));
           } catch (e) {
             (results as any)[h].ipv4 = { error: String(e) };
           }
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (results as any)[h].ipv6 = await dns.resolve6(h).catch((e) => ({ error: String(e) }));
+            (results as any)[h].ipv6 = await dns.resolve6(h).catch((e: unknown) => ({ error: String(e) }));
           } catch (e) {
             (results as any)[h].ipv6 = { error: String(e) };
           }
