@@ -6,22 +6,4 @@
       "schedule": "0 0 * * *"
     }
   ],
-  "routes": [
-    {
-      "src": "/api(/.*)?",
-      "dest": "/api"
-    },
-    {
-      "src": "/Site/(.*)",
-      "dest": "/Site/$1"
-    },
-    {
-      "src": "/",
-      "dest": "/Site/"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/Site/$1"
-    }
-  ]
 }
