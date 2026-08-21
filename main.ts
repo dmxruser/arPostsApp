@@ -3,7 +3,7 @@ import { type IncomingMessage, type ServerResponse } from 'http';
 import { URL } from 'url';
 import * as dns from 'dns/promises';
 import { createAccount } from './Server/AccountFlow/Signup';
-import { loginAccount } from './Server/AccountFlow/Login';
+import { InvalidCredentialsError, loginAccount } from './Server/AccountFlow/Login';
 import { logoutAccount } from './Server/AccountFlow/Logout';
 import { deleteAccount } from './Server/AccountFlow/DeleteAccount';
 import { checkToken } from './Server/AccountFlow/JWT/JWTCheck';
@@ -40,6 +40,10 @@ function badRequest(res: ServerResponse, message: string): void {
   jsonResponse(res, 400, { error: message });
 }
 
+function conflict(res: ServerResponse, message: string): void {
+  jsonResponse(res, 409, { error: message });
+}
+
 function unauthorized(res: ServerResponse): void {
   jsonResponse(res, 401, { error: 'Unauthorized' });
 }
@@ -48,6 +52,13 @@ function serviceUnavailable(res: ServerResponse, message: string): void {
   // eslint-disable-next-line no-console
   console.error('serviceUnavailable', { message });
   jsonResponse(res, 503, { error: 'Service unavailable', message });
+}
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && (error as { code?: unknown }).code === '23505';
 }
 
 function ensureDbConfigured(): void {
@@ -193,6 +204,9 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         await createAccount(username, password);
         return jsonResponse(res, 201, { message: 'Account created' });
       } catch (error) {
+        if (isUniqueConstraintViolation(error)) {
+          return conflict(res, 'Username already exists');
+        }
         const message = error instanceof Error ? error.message : 'Database configuration error';
         return serviceUnavailable(res, message);
       }
@@ -215,6 +229,9 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
         const token = await loginAccount(username, password);
         return jsonResponse(res, 200, { token });
       } catch (error) {
+        if (error instanceof InvalidCredentialsError) {
+          return unauthorized(res);
+        }
         const message = error instanceof Error ? error.message : 'Database configuration error';
         return serviceUnavailable(res, message);
       }

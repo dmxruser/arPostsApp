@@ -3,6 +3,13 @@ import * as argon2 from '@node-rs/argon2';
 import { generateToken, JWT_EXPIRES_IN_MS } from './JWT/JWTGen';
 import { createSession } from './Sessions';
 
+export class InvalidCredentialsError extends Error {
+    constructor() {
+        super('Invalid credentials');
+        this.name = 'InvalidCredentialsError';
+    }
+}
+
 export async function loginAccount(username: string, password: string): Promise<string> {
     const existingUser = await db.query(
         'SELECT id, username, password_hash FROM users WHERE username = $1',
@@ -10,14 +17,14 @@ export async function loginAccount(username: string, password: string): Promise<
     );
 
     if (!existingUser.rows.length) {
-        throw new Error('Username does not exist');
+        throw new InvalidCredentialsError();
     }
 
     const user = existingUser.rows[0];
     const isMatch = await argon2.verify(user.password_hash, password);
 
     if (!isMatch) {
-        throw new Error('Invalid password');
+        throw new InvalidCredentialsError();
     }
 
     const token = await generateToken({ username: user.username, userId: user.id });
