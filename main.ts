@@ -5,6 +5,7 @@ import * as dns from 'dns/promises';
 import { createAccount } from './Server/AccountFlow/Signup';
 import { loginAccount } from './Server/AccountFlow/Login';
 import { logoutAccount } from './Server/AccountFlow/Logout';
+import { deleteAccount } from './Server/AccountFlow/DeleteAccount';
 import { checkToken } from './Server/AccountFlow/JWT/JWTCheck';
 import { loadPosts } from './Server/PostFlow/LoadPosts';
 import { makePost } from './Server/PostFlow/User/MakePost';
@@ -226,6 +227,35 @@ export async function handleRequest(req: IncomingMessage, res: ServerResponse): 
       const token = getBearerToken(req);
       await logoutAccount(token ?? undefined);
       return jsonResponse(res, 200, { message: 'Logged out' });
+    }
+
+    if (pathname === '/account') {
+      if (method !== 'DELETE') {
+        return methodNotAllowed(res, ['DELETE']);
+      }
+
+      const auth = await withAuth(req, res);
+      if (!auth) return;
+
+      const userId = String((auth.userId ?? '') as unknown);
+      const body = await parseJsonBody(req);
+      const password = String(body.password ?? '');
+
+      if (!userId || !password) {
+        return badRequest(res, 'password is required');
+      }
+
+      try {
+        ensureDbConfigured();
+        await deleteAccount(userId, password);
+        return jsonResponse(res, 200, { message: 'Account deleted' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Account deletion failed';
+        if (message === 'Invalid password' || message === 'Invalid account deletion request') {
+          return unauthorized(res);
+        }
+        return serviceUnavailable(res, message);
+      }
     }
 
     if (pathname === '/posts') {

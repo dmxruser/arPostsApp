@@ -9,6 +9,7 @@ paths below; do not call the unprefixed paths such as `/signup`.
 | `POST` | `/api/signup` | Create an account |
 | `POST` | `/api/login` | Sign in |
 | `POST` | `/api/logout` | Sign out |
+| `DELETE` | `/api/account` | Delete the authenticated account; requires `{ "password": "..." }` |
 | `GET` | `/api/posts?lat=&lng=&radius=` | Load nearby posts |
 | `POST` | `/api/posts` | Create a post |
 | `DELETE` | `/api/posts/:postId` | Delete a post |
